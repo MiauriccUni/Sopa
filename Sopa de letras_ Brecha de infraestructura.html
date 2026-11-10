@@ -1,0 +1,162 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Sopa de letras: Brecha de infraestructura</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: señalética vial — tablero tipo asfalto a la izquierda, lista de pistas a la derecha; se apila en móvil */
+:root{
+  --bg:#eef0ee; --surface:#ffffff; --ink:#1d2321; --muted:#5b6662; --line:#cfd5d2;
+  --asphalt:#2b3230; --asphalt-ink:#e9ece9; --mark:#f2c230; --mark-ink:#1d2321; --sel:#3d8f6a;
+  --display:"Overpass","Arial Narrow",Arial,sans-serif; --mono:"Overpass Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#151a18; --surface:#1e2522; --ink:#e6ebe8; --muted:#97a39e; --line:#334039;
+  --asphalt:#0f1312; --asphalt-ink:#d9dfdb; --mark:#f2c230; --mark-ink:#151a18; --sel:#52b388; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151a18; --surface:#1e2522; --ink:#e6ebe8; --muted:#97a39e; --line:#334039;
+  --asphalt:#0f1312; --asphalt-ink:#d9dfdb; --mark:#f2c230; --mark-ink:#151a18; --sel:#52b388; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--display);font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between;margin-bottom:20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font-weight:800;font-size:clamp(26px,4vw,38px);line-height:1.05;margin:4px 0 0;text-wrap:balance}
+.stats{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.count{font-family:var(--mono);font-variant-numeric:tabular-nums;background:var(--mark);color:var(--mark-ink);padding:6px 12px;border-radius:4px;font-weight:700}
+button{font-family:var(--display);font-weight:600;font-size:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 14px;border-radius:4px;cursor:pointer}
+button:hover{border-color:var(--ink)}
+button:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.main{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:minmax(0,1fr)}}
+.board{background:var(--asphalt);padding:14px;border-radius:6px;position:relative;max-width:100%;overflow-x:auto}
+.board::after{content:"";position:absolute;left:14px;right:14px;bottom:5px;height:3px;background:repeating-linear-gradient(90deg,var(--mark) 0 18px,transparent 18px 32px)}
+.grid{display:grid;gap:2px;touch-action:none;user-select:none;-webkit-user-select:none}
+.cell{width:clamp(19px,5.4vw,32px);aspect-ratio:1;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:clamp(11px,3vw,17px);color:var(--asphalt-ink);border-radius:3px;cursor:pointer}
+.cell.sel{background:var(--sel);color:#fff}
+.cell.found{background:var(--mark);color:var(--mark-ink)}
+.cell.hint{outline:2px dashed var(--mark);outline-offset:-2px}
+.tip{font-size:13px;color:var(--muted);margin:10px 0 0}
+.clues{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 20px;list-style:none;padding:0;margin:0}
+.clues li{padding:9px 0;border-bottom:1px solid var(--line);display:grid;gap:2px}
+.w{font-family:var(--mono);font-weight:700;letter-spacing:.06em}
+.clues li.done .w{text-decoration:line-through;text-decoration-color:var(--mark);text-decoration-thickness:3px}
+.c{font-size:13px;color:var(--muted)}
+.win{margin-top:16px;padding:12px 14px;border-left:4px solid var(--mark);background:var(--surface)}
+@media (prefers-reduced-motion:no-preference){.cell.found{transition:background .2s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Costa Rica · vial, tecnológica y educativa</div>
+      <h1>Sopa de letras: brecha de infraestructura</h1>
+    </div>
+    <div class="stats">
+      <span class="count" id="count">0 / 16</span>
+      <button id="reveal" type="button">Mostrar solución</button>
+      <button id="nueva" type="button">Nueva sopa</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div>
+      <div class="board"><div class="grid" id="grid"></div></div>
+      <p class="tip">Toca la primera y la última letra de una palabra, o arrastra sobre ella. Las palabras van en horizontal, vertical, diagonal y al revés.</p>
+    </div>
+    <div>
+      <ul class="clues" id="clues"></ul>
+      <div class="win" id="win" hidden>¡Completada! Encontraste las 16 palabras del documento.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORDS=[
+ ["INFRAESTRUCTURA","Se invierte 1,27% del PIB en ella; se necesita 3–4%"],
+ ["BRECHA","Distancia que separa la zona rural de la urbana"],
+ ["CONECTIVIDAD","El BID estimó US$308 millones para cerrar su brecha"],
+ ["CARRETERAS","Costa Rica está entre los 20 países con viajes más lentos por ellas"],
+ ["PUENTES","7 de cada 10 están en condición deficiente o peor"],
+ ["LANAMME","Laboratorio de la UCR que evalúa la red vial"],
+ ["FIBRA","Óptica; se instala siguiendo caminos y postes"],
+ ["SATELITE","Vía por la que se conectaron 712 centros educativos"],
+ ["RURAL","Zona donde 7 de cada 10 hogares son pobres digitales"],
+ ["POBREZA","Junto a «digital», afecta al 55,9% de los hogares"],
+ ["DIGITAL","Tipo de pobreza medida por el índice de la UCR"],
+ ["FONATEL","Fondo para conectar 1.456 centros educativos"],
+ ["PISA","Prueba donde el país quedó 76 puntos bajo la OCDE"],
+ ["RADIOBASES","Claro y Liberty se comprometieron a 3.104 para 5G"],
+ ["INVERSION","Cayó cerca de 70% en 15 años respecto al PIB"],
+ ["OCDE","Organización cuyo promedio sirve de referencia"]
+];
+const N=16, DIRS=[[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
+const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let grid,place,found,revealed=false,sel=[],dragging=false,start=null;
+const $=id=>document.getElementById(id);
+
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+function build(seed){
+  for(let tries=0;tries<200;tries++){
+    const r=rng(seed+tries*7919); const g=Array.from({length:N},()=>Array(N).fill(null)); const p={}; let ok=true;
+    for(const [w] of [...WORDS].sort((a,b)=>b[0].length-a[0].length)){
+      let done=false;
+      for(let k=0;k<400&&!done;k++){
+        const d=DIRS[Math.floor(r()*8)], y=Math.floor(r()*N), x=Math.floor(r()*N);
+        const ey=y+d[0]*(w.length-1), ex=x+d[1]*(w.length-1);
+        if(ey<0||ey>=N||ex<0||ex>=N) continue;
+        let fit=true;
+        for(let i=0;i<w.length;i++){const c=g[y+d[0]*i][x+d[1]*i]; if(c&&c!==w[i]){fit=false;break}}
+        if(!fit) continue;
+        p[w]=[];
+        for(let i=0;i<w.length;i++){g[y+d[0]*i][x+d[1]*i]=w[i];p[w].push((y+d[0]*i)*N+x+d[1]*i)}
+        done=true;
+      }
+      if(!done){ok=false;break}
+    }
+    if(ok){for(const row of g)for(let i=0;i<N;i++)if(!row[i])row[i]=ABC[Math.floor(r()*26)];return [g,p]}
+  }
+}
+
+function render(){
+  const el=$("grid"); el.style.gridTemplateColumns=`repeat(${N},auto)`; el.innerHTML="";
+  grid.flat().forEach((ch,i)=>{const d=document.createElement("div");d.className="cell";d.textContent=ch;d.dataset.i=i;el.appendChild(d)});
+  const ul=$("clues"); ul.innerHTML="";
+  WORDS.forEach(([w,c])=>{const li=document.createElement("li");li.id="w-"+w;li.innerHTML=`<span class="w">${w}</span><span class="c">${c}</span>`;ul.appendChild(li)});
+  paint();
+}
+function paint(){
+  const cells=$("grid").children, on=new Set(), hint=new Set();
+  for(const w in place){ if(found.has(w)) place[w].forEach(i=>on.add(i)); else if(revealed) place[w].forEach(i=>hint.add(i)); }
+  for(const c of cells){const i=+c.dataset.i;c.classList.toggle("found",on.has(i));c.classList.toggle("hint",hint.has(i));c.classList.toggle("sel",sel.includes(i)&&!on.has(i))}
+  WORDS.forEach(([w])=>$("w-"+w).classList.toggle("done",found.has(w)));
+  $("count").textContent=`${found.size} / ${WORDS.length}`;
+  $("win").hidden=found.size!==WORDS.length;
+  $("reveal").textContent=revealed?"Ocultar solución":"Mostrar solución";
+}
+function line(a,b){
+  const ay=Math.floor(a/N),ax=a%N,by=Math.floor(b/N),bx=b%N,dy=by-ay,dx=bx-ax;
+  if(!(dy===0||dx===0||Math.abs(dy)===Math.abs(dx))) return [a];
+  const n=Math.max(Math.abs(dy),Math.abs(dx)),sy=Math.sign(dy),sx=Math.sign(dx),out=[];
+  for(let k=0;k<=n;k++) out.push((ay+sy*k)*N+ax+sx*k); return out;
+}
+function check(){
+  const key=sel.join(",");
+  for(const w in place){ if(found.has(w)) continue; const p=place[w];
+    if(p.join(",")===key||[...p].reverse().join(",")===key){found.add(w);break} }
+  sel=[];start=null;paint();
+}
+function cellAt(e){const t=document.elementFromPoint(e.clientX,e.clientY);return t&&t.classList.contains("cell")?+t.dataset.i:null}
+const g=$("grid");
+g.addEventListener("pointerdown",e=>{const i=cellAt(e);if(i===null)return;
+  if(start!==null&&i!==start){sel=line(start,i);check();return}
+  start=i;sel=[i];dragging=true;paint()});
+g.addEventListener("pointermove",e=>{if(!dragging)return;const i=cellAt(e);if(i===null)return;sel=line(start,i);paint()});
+window.addEventListener("pointerup",()=>{if(!dragging)return;dragging=false;if(sel.length>1)check()});
+
+function nueva(seed){[grid,place]=build(seed);found=new Set();revealed=false;sel=[];start=null;render()}
+$("nueva").onclick=()=>nueva(Math.floor(Math.random()*1e9));
+$("reveal").onclick=()=>{revealed=!revealed;paint()};
+nueva(20261107);
+</script>
+
+</body></html>
